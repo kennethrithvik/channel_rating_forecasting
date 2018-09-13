@@ -2,6 +2,8 @@ library(readr)
 rating <- read_csv("development/mtech/testR/rating.csv", 
                   col_names = FALSE, col_types = cols(`17-Jun-2007 (25)` = col_date(format = "%dd-%mmm-%YYY")))
 rating_series <- ts(rating["X2"],frequency=52, start=c(2007,25))
+rating_series_test <- ts(rating_test$y,frequency=52, start=c(2008,44))
+rating_series_train <- ts(rating_train$y,frequency=52, start=c(2007,25))
 plot.ts(rating_series)
 log_rating_series <- log(rating_series)
 require(TTR)
@@ -43,3 +45,25 @@ ggplot(rating, aes(X3)) +
 rating_train["month"]<-months(as.POSIXlt(rating_train[["ds"]], format="%m/%d/%Y"))
 rating_test["month"]<-months(as.POSIXlt(rating_test[["ds"]], format="%m/%d/%Y"))
 dummies<-lm(rating_train$y ~ rating_train$X4+rating_train$month, data=rating_train)
+
+#### Exponential smoothing  ####
+
+Sexp<-HoltWinters(rating_series_train,gamma = FALSE,beta = FALSE)  #Simple
+holts<-HoltWinters(rating_series_train,gamma = FALSE)  #holt's
+holt_winter<-HoltWinters(rating_series_train)  #holt-winter's
+plot(Sexp)
+forecast<-forecast(Sexp,h=21)
+forecast<-forecast(holts,h=21)
+forecast<-forecast(holt_winter)
+
+sum(abs(forecast$mean[1:21]-rating_series_test[1:21])/rating_series_test[1:21])*100/21 #mape
+
+### acf pacf  #####
+adfTest(x=rating_series,type = "c")
+rating_series_dif1<-diff(rating_series,differences=1)
+Acf(rating_series_dif1,lag.max = 90)
+Pacf(rating_series_dif1,lag.max = 90)
+
+### arima ####
+
+
